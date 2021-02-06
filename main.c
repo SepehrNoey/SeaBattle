@@ -3,12 +3,21 @@
 #include <conio.h>
 #include <string.h>
 
+struct PLAYER
+{
+    char name[50];
+    int coin;
+};
+typedef struct PLAYER PLAYER;
+
+
 int menu(int choice ,FILE * data);
-int player_set(FILE * data);
-int load(FILE * data);  // return type is the points of the player
+PLAYER player_set(FILE * data);
+PLAYER player_from_list(FILE * data);  // return type is the coins of the player
 
 int main(void){  // 10 * 10
-    FILE * data = fopen("data.SB","r+");  /// loading data
+    
+    FILE * data = fopen("data.SB","rb+");  /// loading data
     
     /////
     system("cls");
@@ -50,32 +59,31 @@ int menu(int choice ,FILE * data){
 
     if (choice == 1)
     {
-        int player1 = player_set(data);  // return type is the point of player
+        PLAYER player1 = player_set(data);  // return type is the coin of player
         
         fseek(data,0,SEEK_SET); 
         
-        int player2 = player_set(data);  // return type is the point of player
+        PLAYER player2 = player_set(data);  // return type is the coin of player
         
     }
     
     
 }
 
-int player_set(FILE * data) {  
+PLAYER player_set(FILE * data) {  
     int innerChoice;
-    
     system("cls");
-    printf("Choose first player:\n\n1) Choose from available users\n2) New user");
+    printf("Choose player:\n\n1) Choose from available users\n2) New user");
     scanf("%d",&innerChoice);
 
 
     if (innerChoice == 1)
     {
-        load(data);  // black box 
+        return player_from_list(data);  // black box // returns player from the list of players
     }
     else if (innerChoice == 2)
     {
-        newUser();  // black box
+        return newUser();  // black box // newplayer
     }
     else 
     {
@@ -84,6 +92,46 @@ int player_set(FILE * data) {
 
 }
 
-int load(FILE * data){
+PLAYER player_from_list(FILE * data){
+    PLAYER temp;
+    int num = 0;
+    while (fread(&temp , sizeof(temp) , 1 , data) == 1)
+    {
+        num++;
+        printf("%d) Player name: %s\tCoins: %d\n",num,temp.name,temp.coin);    
+    }
+    
+
+    puts("Please enter the number of player you want:");
+    int choice;
+    scanf("%d",&choice);
+    
+    
+    if (choice < 0 || choice > num)    // inja momkene badan aziat kone
+    {
+        puts("Invalid input!");
+        return;
+
+    }
+
+    else  
+    {
+        fseek(data,choice - 1,SEEK_SET);
+        int res = fread(&temp,sizeof(temp),1,data);
+        if (res == 1)
+        {
+            return temp;
+        }
+        else
+        {
+            printf("ERROR occurred in reading.\n");
+            exit(-1);
+        }
+        
+    }
+    
+    
+
+
     
 }
