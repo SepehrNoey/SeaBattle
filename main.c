@@ -12,8 +12,12 @@ typedef struct PLAYER PLAYER;
 
 
 int menu(int choice ,FILE * data);
+PLAYER newUser(FILE * data);
 PLAYER player_set(FILE * data);
 PLAYER player_from_list(FILE * data);  // return type is the coins of the player
+
+
+
 
 int main(void){  // 10 * 10
     
@@ -79,7 +83,7 @@ PLAYER player_set(FILE * data) {
 
     if (innerChoice == 1)
     {
-        return player_from_list(data);  // black box // returns player from the list of players
+        return player_from_list(data);  // returns player from the list of players
     }
     else if (innerChoice == 2)
     {
@@ -129,9 +133,45 @@ PLAYER player_from_list(FILE * data){
         }
         
     }
-    
-    
+        
+}
 
 
+PLAYER newUser(FILE * data){
+    
+    /// start of process of checking existence
+    system("cls");
+    char tempName[50];
+    printf("Please enter player's name:\n");
+    gets(tempName);
+    int state = 0;
+
+    PLAYER temp;
+    while (fread(&temp,sizeof(temp),1 , data) == 1)
+    {
+        if (strcmp(temp.name ,tempName) == 0)
+        {
+            printf("Wrong input.This name already exists!");
+            Sleep(2000);
+            state = 1;           
+        }
+        
+    }
+    if (state == 1)
+    {
+        fseek(data,0,SEEK_SET);
+        return newUser(data);
+    }
+    /// end of process of checking existence
+
+
+    //// process of making newuser
+    PLAYER newPlayer;
+    newPlayer.coin = 0;
+    strcpy(newPlayer.name,tempName);
+    fseek(data,0,SEEK_END);   // for preventing bug(if everything goes correct , data is automatic at end)
+    fwrite(&newPlayer,sizeof(newPlayer),1,data);  
+    
+    return newPlayer;
     
 }
