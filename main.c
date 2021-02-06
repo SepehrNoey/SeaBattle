@@ -87,7 +87,7 @@ PLAYER player_set(FILE * data) {
     }
     else if (innerChoice == 2)
     {
-        return newUser();  // black box // newplayer
+        return newUser(data);           // newplayer
     }
     else 
     {
