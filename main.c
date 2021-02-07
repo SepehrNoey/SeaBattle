@@ -23,7 +23,7 @@ typedef Map Map;
 struct Ship
 {
     int ship_size;
-    char expld_or_not[MAX_SHIP_LENGTH];
+    char expld_or_not[21][21];
     char vrt_or_hrzt;
     Cordinate cordinates[2];   // idx[0] -> start  // idx[1] -> end
     struct Ship *next;
@@ -49,16 +49,15 @@ struct Game_Data
 };
 typedef Game_Data Game_Data;
 
-void first_place_make(Ship *current , int count ,Player *player);
-void get_info_ship(int count , int j , Ship *current);
+int first_place_make(Ship *current , int count ,Player *player , int length);
+void get_info_ship(int count , int j , Ship *current , int map_selected_size[2]);
 int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21]);
 Player newUser(FILE * user_data);
 Player player_set(FILE * user_data);
 Player player_from_list(FILE * user_data);  // return type is the coins of the player
 Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]);    
-int check_hrzt(Ship *current , int count , Player *player);
-int check(Ship *current , int count, Player *player);
-
+int check(Ship *current , int count, Player *player , int length);
+Ship * make_list(Ship *current , Player *player);
 
 
 int main(void){  // 10 * 10
@@ -249,8 +248,9 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
 
     Ship *current = player->head;
     int count = 0; /// to find out the ship number 
+    int state = 0;
 
-    for (size_t j = 0; j < 21; j++)
+    for (size_t j = 0; j < 21; j++) // max number of ships is 20
     {
         if (ship_selected[j] != 0)
         {
@@ -259,10 +259,21 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
                 count++;
                 system("cls");
                 printf("size of map : %d * %d\t total ships: %d",map_selected_size[0] , map_selected_size[1],num_ships);
-                get_info_ship(count,j,current);
-                first_place_make(current ,count , player);
-                make_list();    
-                //current = current->next; malloc
+                get_info_ship(count,j,current,map_selected_size);
+                state = first_place_make(current ,count , player , j);
+                if (state == 1)
+                {
+                    make_list();    
+                    //current = current->next; malloc
+                    
+                }
+                else
+                {
+                    i--;
+                    count--;
+                }
+                
+                
             }
             
 
@@ -278,27 +289,55 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
 
 }    
 
-void get_info_ship(int count , int j , Ship *current){
-    
-    printf("Set ship %d-th with size %d.\n",count,j);
+void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]){
+    for (size_t i = 1; i <= map_selected_size[0]; i++)
+    {
+        for (size_t j = 1; j <= map_selected_size[1]; i++)
+        {
+            current->expld_or_not[i][j] = 'H';  // H means healthy  // there are many unneeded elements
+        }
+        
+    }
+    current->next = NULL;
+    current->ship_size = length;
+
+    printf("Set ship %d-th with size %d.\n",count,length);
     printf("Do you want to put this ship vertical(v) or horizontal(h)?\n");
     scanf(" %c",&(current->vrt_or_hrzt));
-    printf("Enter start of ship with size %d:(x,y)\n",j);
+    printf("Enter start of ship with size %d:(x,y)\n",length);
     scanf("(%d,%d)",&current->cordinates[0].x , &current->cordinates[0].y);  // start
     printf("Enter end of this ship:\n");
     scanf("(%d,%d)",&current->cordinates[1].x , &current->cordinates[1].y);  // end
     printf("Ship %d-th completed.\n",count);    
-}
-
-void first_place_make(Ship *current , int count,Player *player){
-    int chk_res = check(current,count,player);
-
 
 }
 
-int check(Ship *current , int count , Player *player){
+int first_place_make(Ship *current , int count,Player *player , int length){
+    int chk_res = check(current,count,player,length);
+    if (chk_res == 0)
+    {
+        return 0;
+    }
+    else if (chk_res == 1)
+    {
+        return 1;
+    }
+    else
+    {
+        printf("ERROR occurred in placing ships.");
+        return -1;
+    }
+    
+}
+
+int check(Ship *current , int count , Player *player , int length){
     if (current->vrt_or_hrzt == 'h')
     {
+        if (current->ship_size != current->cordinates[1].x - current->cordinates[0].x)
+        {
+            printf("Wrong input.Size didn't match.\n");
+            return 0;            
+        }
         if (current->cordinates[0].x < 1 || current->cordinates[1].x > player->player_map.map_size[0] || current->cordinates[0].y < 1 || current->cordinates[0].y > player->player_map.map_size[1])
         {
             printf("Can't place!");
@@ -338,6 +377,12 @@ int check(Ship *current , int count , Player *player){
     }
     else
     {   
+        if (current->ship_size != current->cordinates[1].y - current->cordinates[0].y)
+        {
+            printf("Wrong input.Size didn't match.\n");
+            return 0;            
+        }
+
         if (current->cordinates[0].y < 1 || current->cordinates[1].y > player->player_map.map_size[1] || current->cordinates[0].x < 1 || current->cordinates[0].x > player->player_map.map_size[0])
         {
             printf("Can't place!");
@@ -379,8 +424,7 @@ int check(Ship *current , int count , Player *player){
 }
 
 
-
-make_list(){
-
+Ship * make_list(Ship *current , Player *player){
+    
 }    
 
