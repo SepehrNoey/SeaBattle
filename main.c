@@ -57,7 +57,7 @@ Player player_set(FILE * user_data);
 Player player_from_list(FILE * user_data);  // return type is the coins of the player
 Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]);    
 int check(Ship *current , int count, Player *player , int length);
-Ship * make_list(Ship *current , Player *player);
+Ship * crt_ship(Ship *current , Player *player);
 
 
 int main(void){  // 10 * 10
@@ -259,18 +259,34 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
                 count++;
                 system("cls");
                 printf("size of map : %d * %d\t total ships: %d",map_selected_size[0] , map_selected_size[1],num_ships);
+                Ship *temp = current;
+                if (count != 1)
+                {
+                    current = (Ship *)malloc(sizeof(Ship));    
+                    if (current == NULL)
+                    {
+                        printf("Couldn't allocate memeory.");
+                    
+                    }
+                    
+                }
                 get_info_ship(count,j,current,map_selected_size);
                 state = first_place_make(current ,count , player , j);
-                if (state == 1)
-                {
-                    make_list();    
-                    //current = current->next; malloc
+                if (state != 1)
+                {   
+                    i--;
+                    count--;
+                    state = 1;
+                    if (current != player->head)
+                    {
+                        free(current);
+                        current = temp;
+                    }
                     
                 }
                 else
                 {
-                    i--;
-                    count--;
+                    temp->next = current;
                 }
                 
                 
@@ -325,6 +341,7 @@ int first_place_make(Ship *current , int count,Player *player , int length){
     else
     {
         printf("ERROR occurred in placing ships.");
+        Sleep(2000);
         return -1;
     }
     
@@ -336,17 +353,20 @@ int check(Ship *current , int count , Player *player , int length){
         if (current->ship_size != current->cordinates[1].x - current->cordinates[0].x)
         {
             printf("Wrong input.Size didn't match.\n");
+            Sleep(2000);
             return 0;            
         }
         if (current->cordinates[0].x < 1 || current->cordinates[1].x > player->player_map.map_size[0] || current->cordinates[0].y < 1 || current->cordinates[0].y > player->player_map.map_size[1])
         {
             printf("Can't place!");
+            Sleep(2000);
             return 0;  // 0 means failed            
         }
 
         if (current->cordinates[0].y != current->cordinates[1].y)
         {
             printf("The cordinates aren't horizontal.");
+            Sleep(2000);
             return 0;
         }
         int x = current->cordinates[0].x; // x & y for checing the parts of ship
@@ -380,17 +400,20 @@ int check(Ship *current , int count , Player *player , int length){
         if (current->ship_size != current->cordinates[1].y - current->cordinates[0].y)
         {
             printf("Wrong input.Size didn't match.\n");
+            Sleep(2000);
             return 0;            
         }
 
         if (current->cordinates[0].y < 1 || current->cordinates[1].y > player->player_map.map_size[1] || current->cordinates[0].x < 1 || current->cordinates[0].x > player->player_map.map_size[0])
         {
             printf("Can't place!");
+            Sleep(2000);
             return 0;  // 0 means failed            
         }        
         if (current->cordinates[0].x != current->cordinates[1].x)
         {
             printf("The cordinates aren't vertical.");
+            Sleep(2000);
             return 0;
         }
         
@@ -408,7 +431,10 @@ int check(Ship *current , int count , Player *player , int length){
                     {
                         if (player->player_map.full_map[i][j] != 'N')
                         {
+                            printf("Isn't placable here!");
+                            Sleep(2000);
                             return 0;   // 0 means placable
+                        
                         }
                     }  
                 }
@@ -424,7 +450,16 @@ int check(Ship *current , int count , Player *player , int length){
 }
 
 
-Ship * make_list(Ship *current , Player *player){
+Ship * crt_ship(Ship *current , Player *player){
+    Ship * new = (Ship *)malloc(sizeof(Ship));
+    if (new == NULL)
+    {
+        printf("Couldn't allocate memory.");
+        return -1;
+    }
+    new->next = NULL;
+    current->next = new;
+    new->
     
 }    
 
