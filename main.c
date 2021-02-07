@@ -3,6 +3,7 @@
 #include <conio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #define MAX_SHIP_LENGTH 20
 struct Cordinate
 {
@@ -49,15 +50,16 @@ struct Game_Data
 };
 typedef Game_Data Game_Data;
 
+Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[21]);
 int first_place_make(Ship *current , int count ,Player *player , int length);
-void get_info_ship(int count , int j , Ship *current , int map_selected_size[2]);
+void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]);
+void get_info_ship_rand(int count , int length , Ship *current , int map_selected_size[2]);
 int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21]);
 Player newUser(FILE * user_data);
 Player player_set(FILE * user_data);
 Player player_from_list(FILE * user_data);  // return type is the coins of the player
 Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]);    
-int check(Ship *current , int count, Player *player , int length);
-Ship * crt_ship(Ship *current , Player *player);
+int is_placable(Ship *current , int count, Player *player , int length);
 
 
 int main(void){  // 10 * 10
@@ -109,13 +111,35 @@ int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_sele
     if (choice == 1)
     {
         Player player1 = player_set(user_data);  
-        player1.head = putship(&player1 , map_selected_size,ship_selected); 
-
-        printf("Now , second player:\n");
-        fseek(user_data,0,SEEK_SET); 
+        system("cls");
+        printf("1) Auto\n2) Manual\n");
+        int innerChoice;
+        scanf("%d",&innerChoice);
+        if (innerChoice == 1)
+        {
+            /* code */
+        }
+        else if (innerChoice == 2)
+        {
+            player1.head = putship(&player1 , map_selected_size,ship_selected); 
+        }
         
         Player player2 = player_set(user_data); 
-        player2.head = putship(&player2 , map_selected_size , ship_selected); 
+        printf("Now , second player:\n");
+        fseek(user_data,0,SEEK_SET); 
+
+        
+        printf("1) Auto\n2) Manual\n");
+        scanf("%d",&innerChoice);
+        if (innerChoice == 1)
+        {
+            /* code */
+        }
+        else if (innerChoice == 2)
+        {
+            player2.head = putship(&player2 , map_selected_size,ship_selected); 
+        }
+    
     }
 
     
@@ -267,8 +291,7 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
                     {
                         printf("Couldn't allocate memeory.");
                     
-                    }
-                    
+                    }    
                 }
                 get_info_ship(count,j,current,map_selected_size);
                 state = first_place_make(current ,count , player , j);
@@ -287,16 +310,9 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
                 else
                 {
                     temp->next = current;
-                }
-                
-                
+                }   
             }
-            
-
-            
-            
         }
-        
     }
     
 
@@ -329,7 +345,7 @@ void get_info_ship(int count , int length , Ship *current , int map_selected_siz
 }
 
 int first_place_make(Ship *current , int count,Player *player , int length){
-    int chk_res = check(current,count,player,length);
+    int chk_res = is_placable(current,count,player,length);
     if (chk_res == 0)
     {
         return 0;
@@ -347,7 +363,7 @@ int first_place_make(Ship *current , int count,Player *player , int length){
     
 }
 
-int check(Ship *current , int count , Player *player , int length){
+int is_placable(Ship *current , int count , Player *player , int length){
     if (current->vrt_or_hrzt == 'h')
     {
         if (current->ship_size != current->cordinates[1].x - current->cordinates[0].x)
@@ -448,18 +464,121 @@ int check(Ship *current , int count , Player *player , int length){
     }
     
 }
+Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[21]){
 
-
-Ship * crt_ship(Ship *current , Player *player){
-    Ship * new = (Ship *)malloc(sizeof(Ship));
-    if (new == NULL)
+    //// initialize
+    player->player_map.map_size[0] = map_selected_size[0];
+    player->player_map.map_size[1] = map_selected_size[1];
+    for (size_t i = 0; i < map_selected_size[0] ; i++)
     {
-        printf("Couldn't allocate memory.");
-        return -1;
+        for (size_t j = 0; j < map_selected_size[1]; j++)
+        {
+            player->player_map.turn_map[i][j] = ' ';  //Unknown
+            player->player_map.full_map[i][j] = 'N';  //None
+        }
+    }    
+    int num_ships = 0;
+    for (size_t i = 0; i < 21; i++)
+    {
+        num_ships += ship_selected[i];
     }
-    new->next = NULL;
-    current->next = new;
-    new->
+    //// end initialize
     
-}    
+    Ship *current = player->head;
+    int count = 0; /// to find out the ship number 
+    int state = 0;
+
+    for (size_t j = 0; j < 21; j++)
+    {
+        if (ship_selected[j] != 0)
+        {
+            for (size_t i = 0; i < ship_selected[j]; i++)
+            {
+                count++;
+                Ship *temp = current;
+                if (count != 1)
+                {
+                    current = (Ship *)malloc(sizeof(Ship));
+                    if (current == NULL)
+                    {
+                        printf("Couldn't allocate memeory.");
+                    
+                    }                    
+                }
+                get_info_ship_rand(count,j,current,map_selected_size);
+                state = first_place_make(current,count,player , j);
+                if (state != 1)
+                {
+                    i--;
+                    count--;
+                    state = 1;
+                    if (current != player->head)
+                    {
+                        free(current);
+                        current = temp;
+                    }
+                }
+                else
+                {
+                    temp->next = current;
+                }  
+                
+            }   
+        }    
+    }
+    
+}
+
+void get_info_ship_rand(int count , int length , Ship *current , int map_selected_size[2]){
+    for (size_t i = 1; i <= map_selected_size[0]; i++)
+    {
+        for (size_t j = 1; j <= map_selected_size[1]; i++)
+        {
+            current->expld_or_not[i][j] = 'H';  // H means healthy  // there are many unneeded elements
+        }
+        
+    }
+    current->next = NULL;
+    current->ship_size = length;
+    srand(time(0));
+
+    current->vrt_or_hrzt = rand() % 2 ? 'h': 'v';
+    if (current->vrt_or_hrzt == 'h')
+    {
+        current->cordinates[0].y = (rand() % map_selected_size[1]) + 1;
+        current->cordinates[1].y = current->cordinates[0].y;
+        int state = 0;
+        int x;
+        while (state == 0)
+        {
+            x = rand() % map_selected_size[0] + 1;
+            if (x + length - 1 <= map_selected_size[0])
+            {
+                state = 1;
+            }
+        }
+        current->cordinates[0].x = x;
+        current->cordinates[1].x = x + length - 1;
+    }
+    else
+    {
+        current->cordinates[1].x = (rand() % map_selected_size[0]) + 1;
+        current->cordinates[0].x = current->cordinates[1].x;
+        int state = 0;
+        int y;
+        while (state == 0)
+        {
+            y = rand() % map_selected_size[1] + 1;
+            if (y + length - 1 <= map_selected_size[1])
+            {
+                state = 1;
+            }
+        }
+        current->cordinates[0].y = y;
+        current->cordinates[1].y = y + length - 1;
+    }
+    
+    
+
+}
 
