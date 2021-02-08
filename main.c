@@ -44,6 +44,7 @@ typedef struct Player Player;
 
 struct Game_Data
 {
+    char tag[20];
     Player player1;
     Player player2;
     int turn ;     // to check who's turn is
@@ -54,27 +55,36 @@ typedef struct Game_Data Game_Data;
 Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[21]);
 void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]);
 void get_info_ship_rand(int count , int length , Ship *current , int map_selected_size[2]);
-int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21]);
+int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21] , FILE * game_data , FILE * last_game_data);
 Player newUser(FILE * user_data);
 Player player_set(FILE * user_data);
 Player player_from_list(FILE * user_data , int *state);  
 Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]);
 int is_placable(Ship *current , int count, Player *player , int length);
 void place(Ship *current , Player *player , int length);
+void play_with_friend(Player *player1, Player *player2, FILE * game_data , FILE * last_game_data);
+void showmap(Player de_turn_player);
+void save(FILE * game_data , FILE * last_game_data , Player player1 , Player player2 , int turn_maker);
 
-int main(void){  // 10 * 10
+int main(void){  
 
-    FILE * user_data = fopen("user_data.sb","rb+");  /// loading user_data
-    FILE * last_game_data = fopen("last_game_data.sb","rb+");  // loading last game
+    FILE * user_data = fopen("user_data.sb","rb+");  // loading user_data
+    FILE * game_data = fopen("game_data.sb","rb+");  // loading saved games
+    FILE * last_game_data = fopen("last_game_data.sb" , "rb+");
+    
     if (user_data == NULL)
     {
         user_data = fopen("user_data.sb","wb+"); // it's the first run
     }
+    if (game_data == NULL)
+    {
+        game_data = fopen("last_game_data.sb","wb+");
+    }
     if (last_game_data == NULL)
     {
-        last_game_data = fopen("last_game_data.sb","wb+");
+        last_game_data = fopen("last_game_data.sb" , "wb+");
     }
-
+    
     /////
     system("cls");
     puts("Welcome to SEA BATTLE!!\nIf you are ready , select one of the following choices.");  // start of program
@@ -88,14 +98,13 @@ int main(void){  // 10 * 10
     int choice = 0;
     int map_selected_size[2] = {10,10};
     int ship_selected[21] = {0,4,3,2,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // the value is the number and index is the size
-    int start_or_not = 0;
 
-    while (choice != 7 && start_or_not == 0)
+    while (choice != 7)
     {
-        menu(&player1,&player2,choice , user_data , map_selected_size , ship_selected);
-        if(choice == 6) /// hala ye seri kar ha bayad bokonim  == 6 or != 6 (exit va save kardan)
+        menu(&player1,&player2,choice , user_data , map_selected_size , ship_selected , game_data , last_game_data);
+        if(choice == 7) /// hala ye seri kar ha bayad bokonim  == 6 or != 6 (exit va save kardan)
         {
-
+            
         }
     }
 
@@ -107,7 +116,7 @@ int main(void){  // 10 * 10
 
 }
 
-int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21]){
+int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21] , FILE * game_data , FILE * last_game_data){
 
     printf("1) Play with a Friend\n2) Play with \"Captain Bot\"\n3) Load game\n4) Load last game\n5) Settings\n6) Score Board\n7) Exit\n");
 
@@ -152,7 +161,7 @@ int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int 
             player2->head = putship(player2 , map_selected_size,ship_selected);
         }
 
-        return 1;  // 1 means start game
+        play_with_friend(player1 , player2 , game_data , last_game_data);
     }
     else if (choice == 2)
     {
@@ -237,7 +246,7 @@ Player player_from_list(FILE * user_data , int *state){
         }
     }
         
-    fseek(user_data,choice - 1,SEEK_SET);
+    fseek(user_data,(choice - 1) * sizeof(temp),SEEK_SET);
     int res = fread(&temp,sizeof(temp),1,user_data);
     
     if (res == 1)  // if found
@@ -625,4 +634,74 @@ void place(Ship *current , Player *player , int length){
             player->player_map.full_map[current->cordinates[0].x][i] = 'H';
         }
     }
+}
+void play_with_friend(Player * player1, Player * player2 , FILE * game_data , FILE * last_game_data){
+    Player turn_player;
+    Player de_turn_player;
+    int turn_maker = 0;
+    while (player1->head != NULL && player2->head != NULL)
+    {
+        turn_maker++;
+        turn_player = turn_maker % 2 ? (*player1) : (*player2);
+        de_turn_player = turn_maker % 2 ? (*player2) : (*player1);
+        showmap(de_turn_player);
+        save(game_data,last_game_data,*player1,*player2 ,turn_maker);
+        move();
+        showmap();
+    }
+    
+}
+
+void showmap(Player de_turn_player){
+    int x = de_turn_player.player_map.map_size[0];
+    int y = de_turn_player.player_map.map_size[1];
+    for (size_t i = y; i >= 1; i--)             
+    {
+        int column = 1;
+        for (size_t k = 1; k <= x; k++) 
+        {
+            printf(" %c",de_turn_player.player_map.turn_map[column][i]);
+            column++;
+        }
+        printf("\n");
+    }   
+}
+void save(FILE * game_data , FILE * last_game_data , Player player1 , Player player2 , int turn_maker){
+    printf("\nDo you want to save the game until here?\n1) Yes\n2) No\n");
+    int choice;
+    scanf("%d",&choice);
+    if (choice == 1)
+    {
+        printf("Ok,enter a name for saving this match:\n");
+        getchar();
+        Game_Data temp;
+        gets(temp.tag);
+        temp.player1 = player1;
+        temp.player2 = player2;
+        temp.turn = turn_maker % 2 ? 1 : 2;        
+        
+        fseek(last_game_data , 0 , SEEK_SET);
+        fwrite(&temp , sizeof(temp) , 1 , last_game_data);
+        
+        Game_Data temp2;
+        fseek(game_data , 0 , SEEK_SET);
+        while (fread(&temp2 , sizeof(temp) , 1 , game_data) == 1)
+        {
+            if (strcmp(temp2.tag , temp.tag) == 0)  // checking existing data with same tag
+            {
+                fseek(game_data, -1 * sizeof(Game_Data) , SEEK_CUR);
+                fwrite(&temp , sizeof(temp) , 1 , game_data);
+                printf("Saved successfully!\n");
+                
+                return;
+            }
+            
+        }
+        fseek(game_data , 0 , SEEK_END);
+        fwrite(&temp , sizeof(temp) , 1 , game_data);
+        printf("Saved successfully!\n");
+        return;
+        
+    }
+        
 }
