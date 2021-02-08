@@ -19,7 +19,7 @@ struct Map
     char full_map[MAX_SHIP_LENGTH][MAX_SHIP_LENGTH];
 
 };
-typedef Map Map;
+typedef struct Map Map;
 
 struct Ship
 {
@@ -59,6 +59,7 @@ Player player_set(FILE * user_data);
 Player player_from_list(FILE * user_data);  // return type is the coins of the player
 Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]);    
 int is_placable(Ship *current , int count, Player *player , int length);
+void place(Ship *current , Player *player , int length);
 
 int main(void){  // 10 * 10
     
@@ -256,7 +257,7 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
         for (size_t j = 0; j < map_selected_size[1]; j++)
         {
             player->player_map.turn_map[i][j] = ' ';  //Unknown
-            player->player_map.full_map[i][j] = 'N';  //None
+            player->player_map.full_map[i][j] = 'W';  //Water
         }
     }
     int num_ships = 0;
@@ -308,6 +309,7 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
                 else
                 {
                     temp->next = current;
+                    place(current , player,j);
                 }   
             }
         }
@@ -372,7 +374,7 @@ int is_placable(Ship *current , int count , Player *player , int length){
                 {    
                     if (pow(abs(x - i) , 2) + pow(abs(y - j) , 2) <= 2)
                     {
-                        if (player->player_map.full_map[i][j] != 'N')
+                        if (player->player_map.full_map[i][j] != 'W')
                         {
                             return 0;   // 0 means failed
                         }
@@ -420,7 +422,7 @@ int is_placable(Ship *current , int count , Player *player , int length){
                 {    
                     if (pow(abs(x - i) , 2) + pow(abs(y - j) , 2) <= 2)
                     {
-                        if (player->player_map.full_map[i][j] != 'N')
+                        if (player->player_map.full_map[i][j] != 'W')
                         {
                             printf("Isn't placable here!");
                             Sleep(2000);
@@ -449,7 +451,7 @@ Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected
         for (size_t j = 0; j < map_selected_size[1]; j++)
         {
             player->player_map.turn_map[i][j] = ' ';  //Unknown
-            player->player_map.full_map[i][j] = 'N';  //None
+            player->player_map.full_map[i][j] = 'W';  //Water
         }
     }    
     int num_ships = 0;
@@ -496,6 +498,7 @@ Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected
                 else
                 {
                     temp->next = current;
+                    place(current , player,j);
                 }  
                 
             }   
@@ -551,6 +554,24 @@ void get_info_ship_rand(int count , int length , Ship *current , int map_selecte
         }
         current->cordinates[0].y = y;
         current->cordinates[1].y = y + length - 1;
+    }
+}
+
+void place(Ship *current , Player *player , int length){
+    if (current->vrt_or_hrzt == 'h')  // horizontal
+    {
+        for (size_t i = current->cordinates[0].x; i <= current->cordinates[1].x ; i++)
+        {
+            player->player_map.full_map[i][current->cordinates[0].y] = 'H';   // setting ships //default condition of ships is Healthy
+        }
+        
+    }
+    else
+    {
+      for (size_t i = current->cordinates[0].y; i <= current->cordinates[1].y; i++)
+      {
+          player->player_map.full_map[current->cordinates[0].x][i] = 'H';
+      }
     }
 }
 
