@@ -48,7 +48,7 @@ struct Game_Data
     int turn ;     // to check who's turn is
     
 };
-typedef Game_Data Game_Data;
+typedef struct Game_Data Game_Data;
 
 Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[21]);
 void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]);
