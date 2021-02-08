@@ -54,10 +54,10 @@ typedef struct Game_Data Game_Data;
 Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[21]);
 void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]);
 void get_info_ship_rand(int count , int length , Ship *current , int map_selected_size[2]);
-int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21]);
+int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21]);
 Player newUser(FILE * user_data);
 Player player_set(FILE * user_data);
-Player player_from_list(FILE * user_data);  // return type is the coins of the player
+Player player_from_list(FILE * user_data , int *state);  
 Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]);
 int is_placable(Ship *current , int count, Player *player , int length);
 void place(Ship *current , Player *player , int length);
@@ -82,13 +82,17 @@ int main(void){  // 10 * 10
     system("cls");
     /////
 
+    Player player1;
+    Player player2;
+
     int choice = 0;
     int map_selected_size[2] = {10,10};
     int ship_selected[21] = {0,4,3,2,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // the value is the number and index is the size
+    int start_or_not = 0;
 
-    while (choice != 6)
+    while (choice != 7 && start_or_not == 0)
     {
-        menu(choice , user_data , map_selected_size , ship_selected);
+        menu(&player1,&player2,choice , user_data , map_selected_size , ship_selected);
         if(choice == 6) /// hala ye seri kar ha bayad bokonim  == 6 or != 6 (exit va save kardan)
         {
 
@@ -103,12 +107,12 @@ int main(void){  // 10 * 10
 
 }
 
-int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21]){
+int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21]){
 
-    printf("1) Play with a Friend\n2) Play with \"Captain Bot\"\n3) Load last game\n4) Settings\n5) Score Board\n6) Exit\n");
+    printf("1) Play with a Friend\n2) Play with \"Captain Bot\"\n3) Load game\n4) Load last game\n5) Settings\n6) Score Board\n7) Exit\n");
 
     scanf("%d",&choice);
-    if (choice == 6)
+    if (choice == 7)
     {
         return choice;
     }
@@ -117,7 +121,7 @@ int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_sele
 
     if (choice == 1)
     {
-        Player player1 = player_set(user_data);
+        *player1 = player_set(user_data);
         system("cls");
         printf("Now , put ships for this player.\n\n");
         printf("1) Auto\n2) Manual\n");
@@ -125,30 +129,52 @@ int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_sele
         scanf("%d",&innerChoice);
         if (innerChoice == 1)
         {
-            player1.head = rand_putship(&player1 , map_selected_size, ship_selected);
+            player1->head = rand_putship(player1 , map_selected_size, ship_selected);
         }
         else if (innerChoice == 2)
         {
-            player1.head = putship(&player1 , map_selected_size,ship_selected);
+            player1->head = putship(player1 , map_selected_size,ship_selected);
         }
-
+        
         printf("Now , second player:\n");
         fseek(user_data,0,SEEK_SET);
-        Player player2 = player_set(user_data);
-
-
+        *player2 = player_set(user_data);
+        system("cls");
+        printf("Now , put ships for this player.\n\n");
         printf("1) Auto\n2) Manual\n");
         scanf("%d",&innerChoice);
         if (innerChoice == 1)
         {
-            player2.head = rand_putship(&player2 , map_selected_size,ship_selected);
+            player2->head = rand_putship(player2 , map_selected_size,ship_selected);
         }
         else if (innerChoice == 2)
         {
-            player2.head = putship(&player2 , map_selected_size,ship_selected);
+            player2->head = putship(player2 , map_selected_size,ship_selected);
         }
 
+        return 1;  // 1 means start game
     }
+    else if (choice == 2)
+    {
+        /* code */
+    }
+    else if (choice == 3)
+    {
+        /* code */
+    }
+    else if (choice == 4)
+    {
+        /* code */
+    }
+    else if (choice == 5)
+    {
+        /* code */
+    }
+    else if (choice == 6)
+    {
+        /* code */
+    }
+    
 
 
 
@@ -156,30 +182,32 @@ int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_sele
 }
 
 Player player_set(FILE * user_data) {
-
-
     int innerChoice;
     system("cls");
     printf("Choose player:\n\n1) Choose from available users\n2) New user\n");
     scanf("%d",&innerChoice);
+    int state = 0;
 
-
-    if (innerChoice == 1)
+    while (state == 0)
     {
-        return player_from_list(user_data);  // returns player from the list of players
+        if (innerChoice == 1)
+        {
+            return player_from_list(user_data , &state);  // returns player from the list of players
+        }
+        else if (innerChoice == 2)
+        {
+            state = 1;
+            return newUser(user_data);           // newplayer
+        }
+        else
+        {
+            puts("Invalid input.Try again");  
+            
+        }
     }
-    else if (innerChoice == 2)
-    {
-        return newUser(user_data);           // newplayer
-    }
-    else
-    {
-        puts("Invalid input.Try again");  // bazgasht be porsesh dobare
-    }
-
 }
 
-Player player_from_list(FILE * user_data){
+Player player_from_list(FILE * user_data , int *state){
     Player temp;
     int num = 0;
     while (fread(&temp , sizeof(temp) , 1 , user_data) == 1)
@@ -187,36 +215,42 @@ Player player_from_list(FILE * user_data){
         num++;
         printf("%d) Player name: %s\tCoins: %d\n",num,temp.name,temp.coin);
     }
-
-
-    puts("Please enter the number of player you want:");
-    int choice;
-    scanf("%d",&choice);
-
-
-    if (choice < 0 || choice > num)    // inja momkene badan aziat kone
+    if (num == 0)
     {
-        puts("Invalid input!");
+        system("cls");
+        printf("Sorry.No users yet!\n");
+        Sleep(2000);
+        system("cls");
+        *state = 0;
         return;
-
     }
+    
+    puts("Please enter the number of player you want:");
+    int choice = 0;
 
+    while (choice <= 0 || choice > num)
+    {
+        scanf("%d",&choice);
+        if (choice <= 0 || choice > num)
+        {
+            puts("Invalid input.Try again.");
+        }
+    }
+        
+    fseek(user_data,choice - 1,SEEK_SET);
+    int res = fread(&temp,sizeof(temp),1,user_data);
+    
+    if (res == 1)  // if found
+    {
+        temp.head = NULL;        
+        return temp;
+    }
     else
     {
-        fseek(user_data,choice - 1,SEEK_SET);
-        int res = fread(&temp,sizeof(temp),1,user_data);
-        if (res == 1)
-        {
-            return temp;   // maybe we should make temp head NULL
-        }
-        else
-        {
-            printf("ERROR occurred in reading.\n");
-            exit(-1);
-        }
-
+        printf("ERROR occurred in reading.\n");
+        *state = 0;
+        return;
     }
-
 }
 
 
@@ -229,8 +263,8 @@ Player newUser(FILE * user_data){
     getchar();
     gets(tempName);
     int state = 0;
-
     Player temp;
+
     while (fread(&temp,sizeof(temp),1 , user_data) == 1)
     {
         if (strcmp(temp.name ,tempName) == 0)
@@ -239,8 +273,8 @@ Player newUser(FILE * user_data){
             Sleep(2000);
             state = 1;
         }
-
     }
+
     if (state == 1)
     {
         fseek(user_data,0,SEEK_SET);
