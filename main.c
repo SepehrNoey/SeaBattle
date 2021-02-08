@@ -51,7 +51,6 @@ struct Game_Data
 typedef Game_Data Game_Data;
 
 Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[21]);
-int first_place_make(Ship *current , int count ,Player *player , int length);
 void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]);
 void get_info_ship_rand(int count , int length , Ship *current , int map_selected_size[2]);
 int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21]);
@@ -60,7 +59,6 @@ Player player_set(FILE * user_data);
 Player player_from_list(FILE * user_data);  // return type is the coins of the player
 Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]);    
 int is_placable(Ship *current , int count, Player *player , int length);
-
 
 int main(void){  // 10 * 10
     
@@ -117,7 +115,7 @@ int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_sele
         scanf("%d",&innerChoice);
         if (innerChoice == 1)
         {
-            /* code */
+            player1.head = rand_putship(&player1 , map_selected_size, ship_selected);
         }
         else if (innerChoice == 2)
         {
@@ -133,7 +131,7 @@ int menu(int choice ,FILE * user_data , int map_selected_size[2] , int ship_sele
         scanf("%d",&innerChoice);
         if (innerChoice == 1)
         {
-            /* code */
+            player2.head = rand_putship(&player2 , map_selected_size,ship_selected);
         }
         else if (innerChoice == 2)
         {
@@ -294,7 +292,7 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
                     }    
                 }
                 get_info_ship(count,j,current,map_selected_size);
-                state = first_place_make(current ,count , player , j);
+                state = is_placable(current ,count , player , j);
                 if (state != 1)
                 {   
                     i--;
@@ -314,11 +312,6 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
             }
         }
     }
-    
-
-    
-
-
 }    
 
 void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]){
@@ -344,24 +337,6 @@ void get_info_ship(int count , int length , Ship *current , int map_selected_siz
 
 }
 
-int first_place_make(Ship *current , int count,Player *player , int length){
-    int chk_res = is_placable(current,count,player,length);
-    if (chk_res == 0)
-    {
-        return 0;
-    }
-    else if (chk_res == 1)
-    {
-        return 1;
-    }
-    else
-    {
-        printf("ERROR occurred in placing ships.");
-        Sleep(2000);
-        return -1;
-    }
-    
-}
 
 int is_placable(Ship *current , int count , Player *player , int length){
     if (current->vrt_or_hrzt == 'h')
@@ -506,7 +481,7 @@ Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected
                     }                    
                 }
                 get_info_ship_rand(count,j,current,map_selected_size);
-                state = first_place_make(current,count,player , j);
+                state = is_placable(current,count,player , j);
                 if (state != 1)
                 {
                     i--;
@@ -577,8 +552,5 @@ void get_info_ship_rand(int count , int length , Ship *current , int map_selecte
         current->cordinates[0].y = y;
         current->cordinates[1].y = y + length - 1;
     }
-    
-    
-
 }
 
