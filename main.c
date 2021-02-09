@@ -5,7 +5,7 @@
 #include <math.h>
 #include <time.h>
 #include <stdlib.h>
-#define MAX_SHIP_LENGTH 20
+#define MAX_SHIP_LENGTH 21
 struct Cordinate
 {
     int x;
@@ -25,7 +25,7 @@ typedef struct Map Map;
 struct Ship
 {
     int ship_size;
-    char expld_or_not[21][21];
+    char expld_or_not[MAX_SHIP_LENGTH][MAX_SHIP_LENGTH];
     char vrt_or_hrzt;
     Cordinate cordinates[2];   // idx[0] -> start  // idx[1] -> end
     struct Ship *next;
@@ -52,19 +52,20 @@ struct Game_Data
 };
 typedef struct Game_Data Game_Data;
 
-Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[21]);
+Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[MAX_SHIP_LENGTH]);
 void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]);
 void get_info_ship_rand(int count , int length , Ship *current , int map_selected_size[2]);
-int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21] , FILE * game_data , FILE * last_game_data);
+int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[MAX_SHIP_LENGTH] , FILE * game_data , FILE * last_game_data);
 Player newUser(FILE * user_data);
 Player player_set(FILE * user_data);
 Player player_from_list(FILE * user_data , int *state);  
-Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]);
+Ship *putship(Player *player , int map_selected_size[2],int ship_selected[MAX_SHIP_LENGTH]);
 int is_placable(Ship *current , int count, Player *player , int length);
 void place(Ship *current , Player *player , int length);
 void play_with_friend(Player *player1, Player *player2, FILE * game_data , FILE * last_game_data);
 void showmap(Player de_turn_player);
 void save(FILE * game_data , FILE * last_game_data , Player player1 , Player player2 , int turn_maker);
+int move(Player * de_turn_player);
 
 int main(void){  
 
@@ -97,7 +98,7 @@ int main(void){
 
     int choice = 0;
     int map_selected_size[2] = {10,10};
-    int ship_selected[21] = {0,4,3,2,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // the value is the number and index is the size
+    int ship_selected[MAX_SHIP_LENGTH] = {0,4,3,2,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // the value is the number and index is the size
 
     while (choice != 7)
     {
@@ -116,7 +117,7 @@ int main(void){
 
 }
 
-int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[21] , FILE * game_data , FILE * last_game_data){
+int menu(Player *player1 , Player *player2 , int choice ,FILE * user_data , int map_selected_size[2] , int ship_selected[MAX_SHIP_LENGTH] , FILE * game_data , FILE * last_game_data){
 
     printf("1) Play with a Friend\n2) Play with \"Captain Bot\"\n3) Load game\n4) Load last game\n5) Settings\n6) Score Board\n7) Exit\n");
 
@@ -304,7 +305,7 @@ Player newUser(FILE * user_data){
 
 }
 
-Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
+Ship *putship(Player *player , int map_selected_size[2],int ship_selected[MAX_SHIP_LENGTH]){
 
     //// initialize
     player->player_map.map_size[0] = map_selected_size[0];
@@ -318,7 +319,7 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
         }
     }
     int num_ships = 0;
-    for (size_t i = 0; i < 21; i++)
+    for (size_t i = 0; i < MAX_SHIP_LENGTH; i++)
     {
         num_ships += ship_selected[i];
     }
@@ -330,7 +331,7 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
     int count = 0; /// to find out the ship number
     int state = 0;
 
-    for (size_t j = 0; j < 21; j++) // max number of ships is 20
+    for (size_t j = 0; j < MAX_SHIP_LENGTH; j++) // max number of ships is 20
     {
         if (ship_selected[j] != 0)
         {
@@ -389,7 +390,15 @@ void get_info_ship(int count , int length , Ship *current , int map_selected_siz
     printf("Set ship %d-th with size %d.\n",count,length);
     printf("Do you want to put this ship vertical(v) or horizontal(h)?\n");
     getchar();
-    scanf("%c",&(current->vrt_or_hrzt));
+    while (1)
+    {
+        scanf("%c",&(current->vrt_or_hrzt));
+        if (current->vrt_or_hrzt == 'h' || current->vrt_or_hrzt == 'v')
+        {
+            break;
+        }
+        printf("Wrong input.Try again.\n");
+    }
     printf("Enter start of ship with size %d: x,y\n",length);
     getchar();
     scanf("%d,%d",&current->cordinates[0].x , &current->cordinates[0].y);  // start
@@ -503,7 +512,7 @@ int is_placable(Ship *current , int count , Player *player , int length){
     }
 
 }
-Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[21]){
+Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[MAX_SHIP_LENGTH]){
 
     //// initialize
     player->player_map.map_size[0] = map_selected_size[0];
@@ -517,7 +526,7 @@ Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected
         }
     }
     int num_ships = 0;
-    for (size_t i = 0; i < 21; i++)
+    for (size_t i = 0; i < MAX_SHIP_LENGTH; i++)
     {
         num_ships += ship_selected[i];
     }
@@ -527,7 +536,7 @@ Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected
     int count = 0; /// to find out the ship number
     int state = 0;
 
-    for (size_t j = 0; j < 21; j++)
+    for (size_t j = 0; j < MAX_SHIP_LENGTH; j++)
     {
         if (ship_selected[j] != 0)
         {
@@ -625,7 +634,7 @@ void place(Ship *current , Player *player , int length){
     {
         for (size_t i = current->cordinates[0].x; i <= current->cordinates[1].x ; i++)
         {
-            player->player_map.full_map[i][current->cordinates[0].y] = 'H';   // setting ships //default condition of ships is Healthy
+            player->player_map.full_map[i][current->cordinates[0].y] = 'S';   // set ships //default condition of ships is Healthy
         }
 
     }
@@ -633,7 +642,7 @@ void place(Ship *current , Player *player , int length){
     {
         for (size_t i = current->cordinates[0].y; i <= current->cordinates[1].y; i++)
         {
-            player->player_map.full_map[current->cordinates[0].x][i] = 'H';
+            player->player_map.full_map[current->cordinates[0].x][i] = 'S';
         }
     }
 }
@@ -649,7 +658,10 @@ void play_with_friend(Player * player1, Player * player2 , FILE * game_data , FI
         showmap(de_turn_player);
         save(game_data,last_game_data,*player1,*player2 ,turn_maker);
         //move();
-        //showmap();
+        //delete ship
+        //coin_maker();
+        //if move == 1 -> turn_maker ...
+        //showmap(res_map);
     }
     
 }
@@ -706,4 +718,147 @@ void save(FILE * game_data , FILE * last_game_data , Player player1 , Player pla
         
     }
         
+}
+int move(Player * de_turn_player){   // three kind of returns : 3 -> Complete explosion      2 -> just explosion        0 -> water or choosen before   (all for giving coin)
+    printf("\nPlease enter a cordinate to attack: x,y\n");
+    int x , y;
+    getchar();
+    while (1)
+    {
+        scanf("%d,%d" , &x ,&y);
+        if (!(x < 1 || x > de_turn_player->player_map.map_size[0] || y < 1 || y > de_turn_player->player_map.map_size[1]))
+        {
+            break;
+        }
+        printf("Invalid input.Try again.\n");
+    }
+    
+    printf("\n ...");
+    Sleep(2000);
+    Ship *current = de_turn_player->head;
+
+    if (de_turn_player->player_map.full_map[x][y] == 'W')//water
+    {
+        de_turn_player->player_map.turn_map[x][y] = 'W';
+        printf("Water :(\n");
+        return 0;
+    }
+    else if (de_turn_player->player_map.full_map[x][y] == 'C' || de_turn_player->player_map.full_map[x][y] == 'E') //choosen before
+    {
+        printf("Can't choose.It has been choosen before!\n");
+        return 0;
+    }
+
+    else if (de_turn_player->player_map.full_map[x][y] == 'S')  // Ship(healthy part)
+    {
+        while (current != NULL)
+        {
+            if (current->vrt_or_hrzt == 'h')  // horizontal
+            {
+                if (x >= current->cordinates[0].x && x <= current->cordinates[1].x && y == current->cordinates[0].y)  // found
+                {
+                    if (current->ship_size == 1)
+                    {
+                        current->expld_or_not[x][y] = 'C';  // all cordinates are updated in update_map(but we should call this function length times) but expld updates here
+                        update_map(de_turn_player ,current, x , y); 
+                        printf("Ship destroyed :)\n");
+                        return 3;
+                    }
+                    else
+                    {                        
+                        current->expld_or_not[x][y] = 'E';
+                        int state = 1; // default -> complete explosion
+                        for (size_t i = current->cordinates[0].x; i <= current->cordinates[1].x ; i++)
+                        {
+                            if (current->expld_or_not[i][y] == 'S')
+                            {
+                                state = 0;  // it's not comlete explosion
+                                break;
+                            }
+                        }
+                        if (state == 1)
+                        {
+                            for (size_t i = current->cordinates[0].x; i <= current->cordinates[1].x; i++)
+                            {
+                                update_map(de_turn_player,current,i,y);
+                                printf("Ship destroyed :)\n");
+                                return 3;
+                            }
+                        }
+                        else
+                        {
+                            printf("Caused explosion :)\n");
+                            return 2;
+                        }
+                    }
+                }
+            }
+            else  // vertical
+            {
+                if (y >= current->cordinates[0].y && y <= current->cordinates[1].y && x == current->cordinates[0].x)  // found
+                {
+                    if (current->ship_size == 1)
+                    {
+                        current->expld_or_not[x][y] = 'C';  // all cordinates are updated in update_map(but we should call this function length times) but expld updates here
+                        update_map(de_turn_player ,current, x , y); 
+                        printf("Ship destroyed :)\n");
+                        return 3;
+                    }
+                    else
+                    {                        
+                        current->expld_or_not[x][y] = 'E';
+                        int state = 1; // default -> complete explosion
+                        for (size_t i = current->cordinates[0].y; i <= current->cordinates[1].y ; i++)
+                        {
+                            if (current->expld_or_not[x][i] == 'S')
+                            {
+                                state = 0;  // it's not comlete explosion
+                                break;
+                            }
+                        }
+                        if (state == 1)
+                        {
+                            for (size_t j = current->cordinates[0].y; j <= current->cordinates[1].y; j++)
+                            {
+                                update_map(de_turn_player,current,x,j);
+                                printf("Ship destroyed :)\n");
+                                return 3;
+                            }
+                        }
+                        else
+                        {
+                            printf("Caused explosion :)\n");
+                            return 2;
+                        }
+                    }
+                }                
+            }
+        }
+    }
+}
+
+void update_map(Player *de_turn_player ,Ship *current, int x , int y){ // is used just when complete explosion occurres
+    for (size_t i = 1; i <=  de_turn_player->player_map.map_size[0]; i++)
+    {
+        for (size_t j = 1; j <= de_turn_player->player_map.map_size[1]; j++)
+        {
+            if (current->vrt_or_hrzt == 'h')
+            {
+                if (pow(abs(x - i) , 2) + pow(abs(y - j) , 2) <= 2 && (i < current->cordinates[0].x || i > current->cordinates[1].x || j < current->cordinates[0].y || j > current->cordinates[0].y))
+                {
+                    de_turn_player->player_map.full_map[x][y] = 'C';
+                    de_turn_player->player_map.turn_map[i][j] = 'W';
+                }
+            }
+            else
+            {
+                if (pow(abs(x - i) , 2) + pow(abs(y - j) , 2) <= 2 && (j < current->cordinates[0].y || j > current->cordinates[1].y || i < current->cordinates[0].x || i > current->cordinates[0].x))
+                {
+                    de_turn_player->player_map.full_map[x][y] = 'C';
+                    de_turn_player->player_map.turn_map[i][j] = 'W';
+                }                
+            }
+            
+        }
+    }
 }
