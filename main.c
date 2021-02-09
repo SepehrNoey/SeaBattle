@@ -662,8 +662,19 @@ void play_with_friend(Player * player1, Player * player2 , FILE * game_data , FI
         int extraCoin = 0;
         Ship *current = (*de_turn_player).head;
         int move_res = move(&de_turn_player,&extraCoin , current);
-        turn_maker += coin_maker(&turn_player,move_res,extraCoin);
-        //showmap(res_map);
+        turn_maker += coin_maker(&turn_player,move_res,extraCoin);  // it's also turn_maker
+        showmap(*de_turn_player);
+    }
+    Sleep(2000);
+    if (player1->head == NULL)
+    {
+        system("cls");
+        printf("\n%s wins!",player2->name);
+    }
+    else
+    {
+        system("cls");
+        printf("\n%s wins!",player1->name);
     }
     
 }
@@ -761,7 +772,7 @@ int move(Player **de_turn_player , int *extraCoin , Ship * current){   // three 
                 {
                     if (current->ship_size == 1)
                     {
-                        current->expld_or_not[x][y] = 'C';  // all cordinates are updated in update_map(but we should call this function length times) but expld updates here
+                        current->expld_or_not[x][y] = 'C';  // all maps (except E ones)are updated in update_map(but we should call this function length times) but expld updates here
                         update_map(*de_turn_player ,current, x , y); 
                         printf("Ship destroyed :)\n");
                         delete_ship(current,last_ship,de_turn_player);
@@ -771,6 +782,7 @@ int move(Player **de_turn_player , int *extraCoin , Ship * current){   // three 
                     else
                     {                        
                         current->expld_or_not[x][y] = 'E';
+                        (*de_turn_player)->player_map.turn_map[x][y] = 'E';
                         int state = 1; // default -> complete explosion
                         for (size_t i = current->cordinates[0].x; i <= current->cordinates[1].x ; i++)
                         {
@@ -793,6 +805,7 @@ int move(Player **de_turn_player , int *extraCoin , Ship * current){   // three 
                         }
                         else
                         {
+                            (*de_turn_player)->player_map.turn_map[x][y] = 'E';
                             printf("Caused explosion :)\n");
                             return 2;
                         }
@@ -815,6 +828,7 @@ int move(Player **de_turn_player , int *extraCoin , Ship * current){   // three 
                     else
                     {                        
                         current->expld_or_not[x][y] = 'E';
+                        (*de_turn_player)->player_map.turn_map[x][y] = 'E';
                         int state = 1; // default -> complete explosion
                         for (size_t i = current->cordinates[0].y; i <= current->cordinates[1].y ; i++)
                         {
@@ -837,6 +851,7 @@ int move(Player **de_turn_player , int *extraCoin , Ship * current){   // three 
                         }
                         else
                         {
+                            (*de_turn_player)->player_map.turn_map[x][y] = 'E';
                             printf("Caused explosion :)\n");
                             return 2;
                         }
@@ -859,6 +874,7 @@ void update_map(Player *de_turn_player ,Ship *current, int x , int y){ // is use
                 if (pow(abs(x - i) , 2) + pow(abs(y - j) , 2) <= 2 && (i < current->cordinates[0].x || i > current->cordinates[1].x || j < current->cordinates[0].y || j > current->cordinates[0].y))
                 {
                     de_turn_player->player_map.full_map[x][y] = 'C';
+                    de_turn_player->player_map.turn_map[x][y] = 'C';
                     de_turn_player->player_map.turn_map[i][j] = 'W';
                 }
             }
@@ -867,6 +883,7 @@ void update_map(Player *de_turn_player ,Ship *current, int x , int y){ // is use
                 if (pow(abs(x - i) , 2) + pow(abs(y - j) , 2) <= 2 && (j < current->cordinates[0].y || j > current->cordinates[1].y || i < current->cordinates[0].x || i > current->cordinates[0].x))
                 {
                     de_turn_player->player_map.full_map[x][y] = 'C';
+                    de_turn_player->player_map.turn_map[x][y] = 'C';
                     de_turn_player->player_map.turn_map[i][j] = 'W';
                 }                
             }
