@@ -371,6 +371,7 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[21]){
             }
         }
     }
+    return player->head;
 }
 
 void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]){
@@ -565,6 +566,7 @@ Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected
             }
         }
     }
+    return player->head;
 
 }
 
@@ -646,8 +648,8 @@ void play_with_friend(Player * player1, Player * player2 , FILE * game_data , FI
         de_turn_player = turn_maker % 2 ? (*player2) : (*player1);
         showmap(de_turn_player);
         save(game_data,last_game_data,*player1,*player2 ,turn_maker);
-        move();
-        showmap();
+        //move();
+        //showmap();
     }
     
 }
