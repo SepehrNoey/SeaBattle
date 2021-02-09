@@ -65,7 +65,9 @@ void place(Ship *current , Player *player , int length);
 void play_with_friend(Player *player1, Player *player2, FILE * game_data , FILE * last_game_data);
 void showmap(Player de_turn_player);
 void save(FILE * game_data , FILE * last_game_data , Player player1 , Player player2 , int turn_maker);
-int move(Player * de_turn_player);
+int move(Player **de_turn_player , int *extraCoin , Ship *current);
+int coin_maker(Player *turn_player , int move_res , int extraCoin);
+void delete_ship(Ship *current ,Ship *last_ship ,  Player **player);
 
 int main(void){  
 
@@ -648,19 +650,19 @@ void place(Ship *current , Player *player , int length){
 }
 void play_with_friend(Player * player1, Player * player2 , FILE * game_data , FILE * last_game_data){
     Player turn_player;
-    Player de_turn_player;
+    Player *de_turn_player;
     int turn_maker = 0;
     while (player1->head != NULL && player2->head != NULL)
     {
         turn_maker++;
         turn_player = turn_maker % 2 ? (*player1) : (*player2);
-        de_turn_player = turn_maker % 2 ? (*player2) : (*player1);
-        showmap(de_turn_player);
+        *de_turn_player = turn_maker % 2 ? (*player2) : (*player1);
+        showmap(*de_turn_player);
         save(game_data,last_game_data,*player1,*player2 ,turn_maker);
-        //move();
-        //delete ship
-        //coin_maker();
-        //if move == 1 -> turn_maker ...
+        int extraCoin = 0;
+        Ship *current = (*de_turn_player).head;
+        int move_res = move(&de_turn_player,&extraCoin , current);
+        turn_maker += coin_maker(&turn_player,move_res,extraCoin);
         //showmap(res_map);
     }
     
@@ -719,37 +721,37 @@ void save(FILE * game_data , FILE * last_game_data , Player player1 , Player pla
     }
         
 }
-int move(Player * de_turn_player){   // three kind of returns : 3 -> Complete explosion      2 -> just explosion        0 -> water or choosen before   (all for giving coin)
+int move(Player **de_turn_player , int *extraCoin , Ship * current){   // three kind of returns : 3 -> Complete explosion      2 -> just explosion        0 -> water or choosen before   (all for giving coin)
     printf("\nPlease enter a cordinate to attack: x,y\n");
     int x , y;
     getchar();
     while (1)
     {
         scanf("%d,%d" , &x ,&y);
-        if (!(x < 1 || x > de_turn_player->player_map.map_size[0] || y < 1 || y > de_turn_player->player_map.map_size[1]))
+        if (!(x < 1 || x > (*de_turn_player)->player_map.map_size[0] || y < 1 || y > (*de_turn_player)->player_map.map_size[1]))
         {
             break;
         }
         printf("Invalid input.Try again.\n");
     }
     
-    printf("\n ...");
+    printf("\n ...\n ...\n");
     Sleep(2000);
-    Ship *current = de_turn_player->head;
+    Ship * last_ship = current;
 
-    if (de_turn_player->player_map.full_map[x][y] == 'W')//water
+
+    if ((*de_turn_player)->player_map.full_map[x][y] == 'W')//water
     {
-        de_turn_player->player_map.turn_map[x][y] = 'W';
+        (*de_turn_player)->player_map.turn_map[x][y] = 'W';
         printf("Water :(\n");
         return 0;
     }
-    else if (de_turn_player->player_map.full_map[x][y] == 'C' || de_turn_player->player_map.full_map[x][y] == 'E') //choosen before
+    else if ((*de_turn_player)->player_map.full_map[x][y] == 'C' || (*de_turn_player)->player_map.full_map[x][y] == 'E') //choosen before
     {
         printf("Can't choose.It has been choosen before!\n");
         return 0;
     }
-
-    else if (de_turn_player->player_map.full_map[x][y] == 'S')  // Ship(healthy part)
+    else if ((*de_turn_player)->player_map.full_map[x][y] == 'S')  // Ship(healthy part)
     {
         while (current != NULL)
         {
@@ -760,8 +762,10 @@ int move(Player * de_turn_player){   // three kind of returns : 3 -> Complete ex
                     if (current->ship_size == 1)
                     {
                         current->expld_or_not[x][y] = 'C';  // all cordinates are updated in update_map(but we should call this function length times) but expld updates here
-                        update_map(de_turn_player ,current, x , y); 
+                        update_map(*de_turn_player ,current, x , y); 
                         printf("Ship destroyed :)\n");
+                        delete_ship(current,last_ship,de_turn_player);
+                        *extraCoin = (int)(25 / current->ship_size);  
                         return 3;
                     }
                     else
@@ -780,8 +784,10 @@ int move(Player * de_turn_player){   // three kind of returns : 3 -> Complete ex
                         {
                             for (size_t i = current->cordinates[0].x; i <= current->cordinates[1].x; i++)
                             {
-                                update_map(de_turn_player,current,i,y);
+                                update_map(*de_turn_player,current,i,y);
                                 printf("Ship destroyed :)\n");
+                                delete_ship(current,last_ship,de_turn_player);
+                                *extraCoin = (int)(25 / current->ship_size);  
                                 return 3;
                             }
                         }
@@ -800,8 +806,10 @@ int move(Player * de_turn_player){   // three kind of returns : 3 -> Complete ex
                     if (current->ship_size == 1)
                     {
                         current->expld_or_not[x][y] = 'C';  // all cordinates are updated in update_map(but we should call this function length times) but expld updates here
-                        update_map(de_turn_player ,current, x , y); 
+                        update_map(*de_turn_player ,current, x , y); 
                         printf("Ship destroyed :)\n");
+                        delete_ship(current,last_ship,de_turn_player);
+                        *extraCoin = (int) (25 / current->ship_size);
                         return 3;
                     }
                     else
@@ -820,8 +828,10 @@ int move(Player * de_turn_player){   // three kind of returns : 3 -> Complete ex
                         {
                             for (size_t j = current->cordinates[0].y; j <= current->cordinates[1].y; j++)
                             {
-                                update_map(de_turn_player,current,x,j);
+                                update_map(*de_turn_player,current,x,j);
                                 printf("Ship destroyed :)\n");
+                                delete_ship(current,last_ship,de_turn_player);
+                                *extraCoin = (int)(25 / current->ship_size);  
                                 return 3;
                             }
                         }
@@ -833,6 +843,8 @@ int move(Player * de_turn_player){   // three kind of returns : 3 -> Complete ex
                     }
                 }                
             }
+            last_ship = current;
+            current = current->next;
         }
     }
 }
@@ -858,7 +870,34 @@ void update_map(Player *de_turn_player ,Ship *current, int x , int y){ // is use
                     de_turn_player->player_map.turn_map[i][j] = 'W';
                 }                
             }
-            
         }
+    }
+}
+int coin_maker(Player *turn_player , int move_res , int extraCoin){// three kind of returns : 3 -> Complete explosion      2 -> just explosion        0 -> water or choosen before   (all for giving coin)
+    switch (move_res)
+    {
+    case 3:
+        turn_player->coin += extraCoin + 1;
+        return -1;  // for making turn
+    case 2:
+        turn_player->coin += 1;
+        return -1;
+    case 0:
+        return 0;
+    }    
+}
+
+void delete_ship(Ship *current ,Ship *last_ship ,  Player **player){
+    if (last_ship == current) // deleting the head
+    {
+        (*player)->head = (*player)->head->next;  // correct?
+        current->next = NULL;
+        free(last_ship);
+    }
+    else 
+    {
+        last_ship->next = current->next;
+        current->next = NULL;
+        free(current);
     }
 }
