@@ -45,6 +45,7 @@ typedef struct Player Player;
 struct Game_Data
 {
     char tag[20];
+    char mode;  // bot or friend
     Player player1;
     Player player2;
     int turn ;     // to check who's turn is
@@ -62,7 +63,7 @@ Player player_from_list(int *state);
 Ship *putship(Player *player , int map_selected_size[2],int ship_selected[MAX_SHIP_LENGTH]);
 int is_placable(Ship *current , int count, Player *player , int length);
 void place(Ship *current , Player *player , int length);
-void play_with_friend(Player *player1, Player *player2);
+void play_with_friend(Player *player1, Player *player2 , int turn_maker);
 void showmap(Player de_turn_player);
 void save(Player player1 , Player player2 , int turn_maker);
 int move(Player **de_turn_player , int *extraCoin , Ship *current);
@@ -70,6 +71,12 @@ int coin_maker(Player *turn_player , int move_res , int extraCoin);
 void delete_ship(Ship **current ,Ship *last_ship ,  Player **player);
 FILE *open(char name[20]);
 void update_map(Player *de_turn_player ,Ship *current, int x , int y);
+Game_Data load();
+void settings(int ship_selected[MAX_SHIP_LENGTH],int map_selected_size[2]);
+void showturn(Player *turn_player , Player *player1 , Player *player2);
+void Score_board(void);
+void save_user(Player * player);
+int cmpfunc(const Player *a , const Player *b);
 
 int main(void){  
     
@@ -106,12 +113,7 @@ int main(void){
 int menu(Player *player1 , Player *player2 , int choice ,int map_selected_size[2] , int ship_selected[MAX_SHIP_LENGTH]){ 
 
     printf("1) Play with a Friend\n2) Play with \"Captain Bot\"\n3) Load game\n4) Load last game\n5) Settings\n6) Score Board\n7) Exit\n");
-
     scanf("%d",&choice);
-    if (choice == 7)
-    {
-        return choice;
-    }
 
     ///playing function calls
 
@@ -148,7 +150,7 @@ int menu(Player *player1 , Player *player2 , int choice ,int map_selected_size[2
             player2->head = putship(player2 , map_selected_size,ship_selected);
         }
 
-        play_with_friend(player1 , player2);
+        play_with_friend(player1 , player2 , 0);
     }
     else if (choice == 2)
     {
@@ -158,25 +160,49 @@ int menu(Player *player1 , Player *player2 , int choice ,int map_selected_size[2
     }
     else if (choice == 3)
     {
-        /* code */
+        Game_Data loaded = load();
+        if (loaded.mode == 'b') 
+        {
+        //    play_with_bot();
+        }
+        else
+        {
+            int turn_maker = loaded.turn == 1 ? 0 : 1;
+            play_with_friend(&loaded.player1 , &loaded.player2 ,turn_maker);
+        }
     }
     else if (choice == 4)
     {
-        /* code */
+        Game_Data loaded;
+        FILE * last_game_data = open("last_game_data.sb");
+        int state = fread(&loaded , sizeof(Game_Data) , 1 , last_game_data);
+        if (state != 1)
+        {
+            printf("Sorry.No data yet!\n");
+            Sleep(2000);
+        }
+        else if (loaded.mode == 'b')
+        {
+        //    play_with_bot();
+        }
+        else
+        {
+            int turn_maker = loaded.turn == 1 ? 0 : 1;
+            play_with_friend(&loaded.player1,&loaded.player2 , turn_maker);
+        }
     }
     else if (choice == 5)
     {
-        /* code */
+        //settings(ship_selected,map_selected_size);
     }
     else if (choice == 6)
     {
-        /* code */
+        Score_board();
     }
-    
-
-
-
-
+    else if (choice == 7)
+    {
+        exit(0);
+    }
 }
 
 Player player_set(void) {
@@ -218,11 +244,12 @@ Player player_from_list(int *state){
     {
         system("cls");
         printf("Sorry.No users yet!\n");
+        printf("So, let's make a new user:\n");
         Sleep(2000);
         system("cls");
         *state = 0;
         fclose(user_data);
-        return;
+        return newUser();
     }
     
     puts("Please enter the number of player you want:");
@@ -352,7 +379,7 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[MAX_SH
                     state = 1;
                     if (current != player->head)
                     {
-                        free(current);
+                        //free(current);
                         current = temp;
                     }
 
@@ -555,7 +582,7 @@ Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected
                     state = 1;
                     if (current != player->head)
                     {
-                        free(current);
+                        //free(current);
                         current = temp;
                     }
                 }
@@ -639,15 +666,15 @@ void place(Ship *current , Player *player , int length){
         }
     }
 }
-void play_with_friend(Player * player1, Player * player2){
+void play_with_friend(Player * player1, Player * player2 , int turn_maker){
     Player *turn_player;
     Player *de_turn_player;
-    int turn_maker = 0;
     while (player1->head != NULL && player2->head != NULL)
     {
         turn_maker++;
         turn_player = turn_maker % 2 ? (player1) : (player2);
         de_turn_player = turn_maker % 2 ? (player2) : (player1);
+        showturn(turn_player,player1 , player2);
         showmap(*de_turn_player);
         save(*player1,*player2 ,turn_maker);
         int extraCoin = 0;
@@ -671,6 +698,8 @@ void play_with_friend(Player * player1, Player * player2){
         system("cls");
         printf("\n%s wins!\n\n",player1->name);
     }
+    printf("(player1: %d)(player2 : %d)\n",player1->coin , player2->coin);
+    printf("(player1: %s)(player2 : %s)\n",player1->name , player2->name);
     
 }
 
@@ -691,14 +720,17 @@ void showmap(Player de_turn_player){
 void save(Player player1 , Player player2 , int turn_maker){
     FILE * game_data = open("game_data.sb");
     FILE * last_game_data = open("last_game_data.sb");
-    printf("\nDo you want to save the game until here?\n1) Yes\n2) No\n");
+    printf("\n1) Continue\n2) Save and continue\n3) Save and exit\n");
     int choice;
     scanf("%d",&choice);
-    if (choice == 1)
+    if (choice == 2 || choice == 3)
     {
+        save_user(&player1);
+        save_user(&player2);
         printf("Ok,enter a name for saving this match:\n");
         getchar();
         Game_Data temp;
+        temp.mode = 'f';  // freind
         gets(temp.tag);
         temp.player1 = player1;
         temp.player2 = player2;
@@ -717,6 +749,12 @@ void save(Player player1 , Player player2 , int turn_maker){
                 fseek(game_data, -1 * sizeof(Game_Data) , SEEK_CUR);
                 fwrite(&temp , sizeof(temp) , 1 , game_data);
                 printf("Saved successfully!\n");
+                if (choice == 3)
+                {
+                    fclose(game_data);
+                    Sleep(1500);
+                    exit(0);
+                }
                 fclose(game_data);
                 return;
             }
@@ -725,6 +763,12 @@ void save(Player player1 , Player player2 , int turn_maker){
         fseek(game_data , 0 , SEEK_END);
         fwrite(&temp , sizeof(temp) , 1 , game_data);
         printf("Saved successfully!\n");
+        if (choice == 3)
+        {
+            fclose(game_data);
+            Sleep(1500);
+            exit(0);
+        }        
         fclose(game_data);
         return;
         
@@ -914,16 +958,16 @@ void delete_ship(Ship **current ,Ship *last_ship ,  Player **player){
     if (last_ship == *current) // deleting the head
     {
         (*player)->head = (*player)->head->next;  // correct?
-        (*current)->next = NULL;
         *current = (*current)->next;  // now current is the next node
-        free(last_ship);
+        last_ship->next = NULL;
+        //free(last_ship);
     }
     else 
     {
         last_ship->next = (*current)->next;
         (*current)->next = NULL;
         *current = last_ship;  // now current is the node before
-        free(current);
+        //free(current);
     }
 }
 
@@ -936,3 +980,126 @@ FILE *open(char name[20]){
     return fpr;
     
 }
+
+Game_Data load(){
+    FILE *game_data = open("game_data.sb");
+    Game_Data data ;
+    system("cls");
+    printf("List of saved games:\n\n");
+    int state = 0;
+    int num = 0;
+    while(fread(&data,sizeof(Game_Data),1,game_data) == 1);
+    {
+        state = 1;
+        num++;
+        char mode[20] ;
+        if (data.mode == 'b')
+            strcpy(mode, "With \"Captain Bot\"");
+        else
+            strcpy(mode,"With Friend");        
+
+        printf("%d) Game tag : %s\tMode : %s\n",num, data.tag ,mode);
+
+    }
+    if (state  == 1)
+    {
+        int choice;
+        printf("Please enter the number of game you want:\n");
+        scanf("%d",&choice);
+        if (choice <= 0 || choice > num){
+            printf("Invalid input.");
+            fclose(game_data);
+            return load();
+            
+        }
+        else
+        {
+            fseek(game_data , (choice - 1) * sizeof(Game_Data) , SEEK_SET);
+            fread(&data , sizeof(Game_Data) , 1 , game_data);
+            fclose(game_data);
+            return data;
+        }
+    }
+    else
+    {
+        printf("Sorry . No games yet!\n");
+        Sleep(2000);
+        fclose(game_data);
+        return;
+    }
+    
+    
+}
+
+void showturn(Player *turn_player ,Player *player1 , Player *player2){
+    printf("Turn : %s\t\t%s coins : %d\t%s coins : %d\n\n",turn_player->name ,player1->name , player1->coin , player2->name , player2->coin);
+}
+
+/*void settings(int ship_selected[MAX_SHIP_LENGTH],int map_selected_size[2]){
+    system("cls");
+    printf("1) Ships\n2) Map size\n3) Theme\n\n");
+    int choice;
+    scanf("%d",&choice);
+    if (choice == 1)
+    {
+        printf("\nAttention.Max size of ship can be 20 !\n");
+        Sleep(2000);
+        system("cls");
+        int el_needed = 0;
+        for (size_t i = 1; i <= 20; i++)
+        {
+            printf("Number of ships with size %d : \n", i);
+            scanf("%d",&ship_selected[i]);
+            el_needed += (ship_selected[i]
+        }
+
+        
+        
+    }
+    
+}*/
+
+void Score_board(void){
+    FILE * user_data = open("user_data.sb");
+    Player * temp = (Player *)malloc(sizeof(Player));
+    int num = 0;
+    while (fread(&temp[num], sizeof(Player) , 1, user_data) == 1)
+    {
+        num++;
+        temp = (Player *)realloc(temp,(num + 1)* sizeof(Player));
+    }
+    fclose(user_data);
+    qsort(temp , num , sizeof(Player),cmpfunc);
+    for (size_t i = 0; i < num; i++)
+        printf("%d) %s\tcoins : %d\n",i + 1 , temp[i].name, temp[i].coin);
+
+}
+void save_user(Player * player){
+    FILE * user_data = open("user_data.sb");
+    Player temp;
+    while (fread(&temp,sizeof(Player) , 1 , user_data) == 1)
+    {
+        if (strcmp(temp.name , player->name) == 0)
+        {
+            temp.coin += player->coin;
+            fseek(user_data,-1 * sizeof(Player) , SEEK_CUR);
+            fwrite(&temp,sizeof(Player) , 1, user_data);
+            fclose(user_data);
+            return;
+        }
+        
+    }
+    printf("No user , ERROR!\n");
+    fclose(user_data);
+}
+
+
+int cmpfunc(const Player *a , const Player *b){  
+    if (a->coin > b->coin)
+        return -1;
+    else if (a->coin < b->coin)
+        return 1;
+    else 
+        return 0;    
+}
+
