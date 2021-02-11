@@ -83,6 +83,7 @@ void play_with_bot(Player * player1 , Player * player2 , int turn_maker);
 Player ply_set_bot(void);
 int bot_move(Player **de_turn_player , int *extraCoin , Ship *current);
 void save_ship(Ship *plyHead , char *tag , int plyNum);
+void read_link(Game_Data *loaded);
 
 int main(void){  
     
@@ -205,11 +206,13 @@ int menu(Player *player1 , Player *player2 , int choice ,int map_selected_size[2
         else if (loaded.mode == 'b')
         {
             int turn_maker = loaded.turn == 1 ? 0 : 1;
+            read_link(&loaded);
             play_with_bot(&loaded.player1,&loaded.player2,turn_maker);
         }
         else
         {
             int turn_maker = loaded.turn == 1 ? 0 : 1;
+            read_link(&loaded);
             play_with_friend(&loaded.player1,&loaded.player2 , turn_maker);
         }
     }
@@ -729,7 +732,7 @@ void showmap(Player de_turn_player){
         int column = 1;
         for (size_t k = 1; k <= x; k++) 
         {
-            printf("|%c|",de_turn_player.player_map.turn_map[column][i]);  // mitunim bejaye space chiz behtari bezarim
+            printf("%c ",de_turn_player.player_map.turn_map[column][i]);  // mitunim bejaye space chiz behtari bezarim
             column++;
         }
         printf("\n");
@@ -763,9 +766,19 @@ void save(Player player1 , Player player2 , int turn_maker){
         fwrite(&temp , sizeof(temp) , 1 , last_game_data);
         fclose(last_game_data);
         
-        Game_Data temp2;
-
-        while (fread(&temp2 , sizeof(temp) , 1 , game_data) == 1)
+        fseek(game_data,0,SEEK_END);
+        fwrite(&temp , sizeof(temp) , 1 , game_data);
+        printf("Saved successfully!\n");
+        fclose(game_data);        
+        if (choice == 3)
+        {
+            Sleep(1500);
+            exit(0);
+        }
+        
+        //int state = 0;
+        //Game_Data temp2;
+        /*while (fread(&temp2 , sizeof(temp2) , 1 , game_data) == 1)
         {
             if (strcmp(temp2.tag , temp.tag) == 0)  // checking existing data with same tag
             {
@@ -779,22 +792,25 @@ void save(Player player1 , Player player2 , int turn_maker){
                     exit(0);
                 }
                 fclose(game_data);
+                state = 1;
                 return;
             }
             
         }
-        fseek(game_data , 0 , SEEK_END);
-        fwrite(&temp , sizeof(temp) , 1 , game_data);
-        printf("Saved successfully!\n");
-        if (choice == 3)
+        if (state == 0)
         {
+            fseek(game_data , 0 , SEEK_END);
+            fwrite(&temp , sizeof(temp) , 1 , game_data);
+            printf("Saved successfully!\n");
+            if (choice == 3)
+            {
+                fclose(game_data);
+                Sleep(1500);
+                exit(0);
+            }        
             fclose(game_data);
-            Sleep(1500);
-            exit(0);
-        }        
-        fclose(game_data);
-        return;
-        
+            return;
+        }*/
     }
     fclose(game_data);
     fclose(last_game_data);
@@ -1018,7 +1034,8 @@ Game_Data load(){
     printf("List of saved games:\n\n");
     int state = 0;
     int num = 0;
-    while(fread(&data,sizeof(Game_Data),1,game_data) == 1);
+    fseek(game_data,0,SEEK_SET);
+    while(fread(&data,sizeof(Game_Data),1,game_data) == 1)
     {
         state = 1;
         num++;
@@ -1348,6 +1365,7 @@ void save_ship(Ship *plyHead , char *tag , int plyNum){
     {
         strcpy(plyHead->game_tag , tag);
         plyHead->plyNum = plyNum;
+        fseek(fpr,0,SEEK_END);
         fwrite(plyHead , sizeof(Ship) , 1 , fpr);
         plyHead = plyHead->next;
     }
