@@ -24,6 +24,8 @@ typedef struct Map Map;
 
 struct Ship
 {
+    int plyNum;
+    char game_tag[20];
     int ship_size;
     char expld_or_not[MAX_SHIP_LENGTH][MAX_SHIP_LENGTH];
     char vrt_or_hrzt;
@@ -80,6 +82,8 @@ int cmpfunc(const Player *a , const Player *b);
 void play_with_bot(Player * player1 , Player * player2 , int turn_maker);
 Player ply_set_bot(void);
 int bot_move(Player **de_turn_player , int *extraCoin , Ship *current);
+void save_ship(Ship *plyHead , char *tag , int plyNum);
+
 int main(void){  
     
     /////
@@ -176,9 +180,11 @@ int menu(Player *player1 , Player *player2 , int choice ,int map_selected_size[2
     else if (choice == 3)
     {
         Game_Data loaded = load();
+        read_link(&loaded);
         if (loaded.mode == 'b') 
         {
-        //    play_with_bot();
+            int turn_maker = loaded.turn == 1 ? 0 : 1;
+            play_with_bot(&loaded.player1,&loaded.player2,turn_maker);
         }
         else
         {
@@ -198,7 +204,8 @@ int menu(Player *player1 , Player *player2 , int choice ,int map_selected_size[2
         }
         else if (loaded.mode == 'b')
         {
-        //    play_with_bot();
+            int turn_maker = loaded.turn == 1 ? 0 : 1;
+            play_with_bot(&loaded.player1,&loaded.player2,turn_maker);
         }
         else
         {
@@ -736,11 +743,18 @@ void save(Player player1 , Player player2 , int turn_maker){
     scanf("%d",&choice);
     if (choice == 2 || choice == 3)
     {
+        
         printf("Ok,enter a name for saving this match:\n");
         getchar();
         Game_Data temp;
-        temp.mode = 'f';  // freind
+        if (strcmp(player2.name , "Captain Bot") == 0)
+            temp.mode = 'b';
+        else        
+            temp.mode = 'f';  // freind
         gets(temp.tag);
+        
+        save_ship(player1.head ,temp.tag , 1);        
+        save_ship(player2.head , temp.tag , 2);        
         temp.player1 = player1;
         temp.player2 = player2;
         temp.turn = turn_maker % 2 ? 1 : 2;        
@@ -1326,3 +1340,68 @@ int bot_move(Player **de_turn_player , int *extraCoin , Ship *current){
         }
     }
 }  
+
+
+void save_ship(Ship *plyHead , char *tag , int plyNum){
+    FILE * fpr = open("pl_ship.sb");
+    while (plyHead != NULL)
+    {
+        strcpy(plyHead->game_tag , tag);
+        plyHead->plyNum = plyNum;
+        fwrite(plyHead , sizeof(Ship) , 1 , fpr);
+        plyHead = plyHead->next;
+    }
+    fclose(fpr);
+}
+
+
+void read_link(Game_Data *loaded){
+    FILE *pl_ship = fopen("pl_ship.sb" , "rb");
+    if (pl_ship == NULL)
+    {
+        printf("ERROR, No saved game yet!");
+        fclose(pl_ship);
+        exit(-1);
+    }
+    Ship temp;
+    while (fread(&temp , sizeof(Ship) , 1 , pl_ship) == 1)
+        if (strcmp(temp.game_tag , loaded->tag) == 0)
+            break;      // found
+
+    fseek(pl_ship , -1 * sizeof(Ship) , SEEK_CUR);
+
+    Ship * current1 = NULL;
+    Ship * current2  = NULL;
+    int num1 = 0;
+    int num2 = 0;
+    Ship * last_ship1;
+    Ship * last_ship2;
+    while (fread(&temp , sizeof(Ship) , 1 , pl_ship) == 1)
+    {
+        if (strcmp(temp.game_tag , loaded->tag) == 0 && temp.plyNum == 1)  // player1
+        {
+            num1++;
+            last_ship1 = current1;
+            current1 = (Ship *)malloc(sizeof(Ship));
+            *current1 = temp;
+            if (num1 == 1)
+                loaded->player1.head = current1;  //linking head
+            current1->next = NULL;
+            if (last_ship1 != NULL)   //linking others
+                last_ship1->next = current1;
+        }
+        else if (strcmp(temp.game_tag , loaded->tag) == 0 && temp.plyNum == 2) // player2
+        {
+            num2++;
+            last_ship2 = current2;
+            current2 = (Ship *)malloc(sizeof(Ship));
+            *current2 = temp;
+            if (num2 == 1)
+                loaded->player2.head = current2;
+            current2->next = NULL;
+            if (last_ship2 != NULL)
+                last_ship2->next = current2;
+        }
+    }
+    fclose(pl_ship);
+}
