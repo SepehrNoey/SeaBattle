@@ -55,13 +55,13 @@ typedef struct Game_Data Game_Data;
 
 Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[MAX_SHIP_LENGTH]);
 void get_info_ship(int count , int length , Ship *current , int map_selected_size[2]);
-void get_info_ship_rand(int count , int length , Ship *current , int map_selected_size[2]);
+void get_info_ship_rand( int length , Ship *current , int map_selected_size[2]);
 int menu(Player *player1 , Player *player2 , int choice , int map_selected_size[2] , int ship_selected[MAX_SHIP_LENGTH]);
 Player newUser();
 Player player_set(void);
 Player player_from_list(int *state);  
 Ship *putship(Player *player , int map_selected_size[2],int ship_selected[MAX_SHIP_LENGTH]);
-int is_placable(Ship *current , int count, Player *player , int length);
+int is_placable(Ship *current , int count, Player *player , int length , int mode);  // mode is for finding out auto or manual
 void place(Ship *current , Player *player , int length);
 void play_with_friend(Player *player1, Player *player2 , int turn_maker);
 void showmap(Player de_turn_player);
@@ -102,9 +102,6 @@ int main(void){
             
         }
     }
-
-
-
     return 0;
 
 
@@ -156,6 +153,7 @@ int menu(Player *player1 , Player *player2 , int choice ,int map_selected_size[2
     {
         *player1 = player_set();
         system("cls");
+
         
     }
     else if (choice == 3)
@@ -269,7 +267,7 @@ Player player_from_list(int *state){
     
     if (res == 1)  // if found
     {
-        temp.head = NULL;
+        temp.head = (Ship *)malloc(sizeof(Ship));
         fclose(user_data);        
         return temp;
     }
@@ -345,13 +343,11 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[MAX_SH
     }
     //// end initialize
 
-
-
     Ship *current = player->head;
     int count = 0; /// to find out the ship number
     int state = 0;
 
-    for (size_t j = 0; j < MAX_SHIP_LENGTH; j++) // max number of ships is 20
+    for (size_t j = MAX_SHIP_LENGTH - 1; j > 0; j--) // max number of ships is 20
     {
         if (ship_selected[j] != 0)
         {
@@ -371,7 +367,7 @@ Ship *putship(Player *player , int map_selected_size[2],int ship_selected[MAX_SH
                     }
                 }
                 get_info_ship(count,j,current,map_selected_size);
-                state = is_placable(current ,count , player , j);
+                state = is_placable(current ,count , player , j , 1);
                 if (state != 1)
                 {
                     i--;
@@ -431,7 +427,7 @@ void get_info_ship(int count , int length , Ship *current , int map_selected_siz
 }
 
 
-int is_placable(Ship *current , int count , Player *player , int length){
+int is_placable(Ship *current , int count , Player *player , int length , int mode){
     if (current->vrt_or_hrzt == 'h')
     {
         if (current->ship_size != current->cordinates[1].x - current->cordinates[0].x + 1)
@@ -467,6 +463,11 @@ int is_placable(Ship *current , int count , Player *player , int length){
                     {
                         if (player->player_map.full_map[i][j] != 'W')
                         {
+                            if (mode == 1)
+                            {
+                                printf("Isn't placable here!");
+                                Sleep(2000);
+                            }                            
                             return 0;   // 0 means failed
                         }
                     }
@@ -475,6 +476,7 @@ int is_placable(Ship *current , int count , Player *player , int length){
             x++;
 
         }
+        
         return 1; // 1 means true
 
 
@@ -487,7 +489,6 @@ int is_placable(Ship *current , int count , Player *player , int length){
             Sleep(2000);
             return 0;
         }
-
         if (current->cordinates[0].y < 1 || current->cordinates[1].y > player->player_map.map_size[1] || current->cordinates[0].x < 1 || current->cordinates[0].x > player->player_map.map_size[0])
         {
             printf("Can't place!");
@@ -504,7 +505,6 @@ int is_placable(Ship *current , int count , Player *player , int length){
         int x = current->cordinates[0].x; // x & y for checing the parts of ship
         int y = current->cordinates[0].y;
 
-
         while (y <= current->cordinates[1].y)
         {
             for (size_t i = 1; i <= player->player_map.map_size[0]; i++)
@@ -515,48 +515,43 @@ int is_placable(Ship *current , int count , Player *player , int length){
                     {
                         if (player->player_map.full_map[i][j] != 'W')
                         {
-                            printf("Isn't placable here!");
-                            Sleep(2000);
-                            return 0;   // 0 means placable
-
+                            if (mode == 1)
+                            {
+                                printf("Isn't placable here!");
+                                Sleep(2000);
+                            }
+                            return 0;   // 0 means unplacable
                         }
                     }
                 }
             }
             y++;
-
         }
-        return 1; // 1 means unplacable
-
-
+        return 1; // 1 means placable
     }
-
 }
+
 Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected[MAX_SHIP_LENGTH]){
 
     //// initialize
     player->player_map.map_size[0] = map_selected_size[0];
     player->player_map.map_size[1] = map_selected_size[1];
-    for (size_t i = 0; i < map_selected_size[0] ; i++)
+    for (size_t i = 0; i <= map_selected_size[0] ; i++)
     {
-        for (size_t j = 0; j < map_selected_size[1]; j++)
+        for (size_t j = 0; j <= map_selected_size[1]; j++)
         {
             player->player_map.turn_map[i][j] = '-';  //Unknown
             player->player_map.full_map[i][j] = 'W';  //Water
         }
     }
-    int num_ships = 0;
-    for (size_t i = 0; i < MAX_SHIP_LENGTH; i++)
-    {
-        num_ships += ship_selected[i];
-    }
+
     //// end initialize
 
     Ship *current = player->head;
     int count = 0; /// to find out the ship number
     int state = 0;
 
-    for (size_t j = 0; j < MAX_SHIP_LENGTH; j++)
+    for (size_t j = MAX_SHIP_LENGTH - 1; j > 0; j--)
     {
         if (ship_selected[j] != 0)
         {
@@ -573,8 +568,8 @@ Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected
 
                     }
                 }
-                get_info_ship_rand(count,j,current,map_selected_size);
-                state = is_placable(current,count,player , j);
+                get_info_ship_rand(j,current,map_selected_size);
+                state = is_placable(current,count,player , j , 0);
                 if (state != 1)
                 {
                     i--;
@@ -599,12 +594,12 @@ Ship *rand_putship(Player *player , int map_selected_size[2] , int ship_selected
 
 }
 
-void get_info_ship_rand(int count , int length , Ship *current , int map_selected_size[2]){
+void get_info_ship_rand( int length , Ship *current , int map_selected_size[2]){
     for (size_t i = 1; i <= map_selected_size[0]; i++)
     {
         for (size_t j = 1; j <= map_selected_size[1]; j++)
         {
-            current->expld_or_not[i][j] = 'S';  // H means healthy  // there are many unneeded elements
+            current->expld_or_not[i][j] = 'S';  // S means healthy  // there are many unneeded elements
         }
 
     }
