@@ -155,7 +155,21 @@ int menu(Player *player1 , Player *player2 , int choice ,int map_selected_size[2
     {
         *player1 = player_set();
         system("cls");
+        printf("Now , put ships for this player.\n\n");
+        printf("1) Auto\n2) Manual\n");
+        int innerChoice;
+        scanf("%d",&innerChoice);
+        if (innerChoice == 1)
+        {
+            player1->head = rand_putship(player1 , map_selected_size, ship_selected);
+        }
+        else if (innerChoice == 2)
+        {
+            player1->head = putship(player1 , map_selected_size,ship_selected);
+        }
+        system("cls");
         *player2 = ply_set_bot();
+        player2->head = rand_putship(player2,map_selected_size,ship_selected);
         play_with_bot(player1,player2 , 0);
         
     }
