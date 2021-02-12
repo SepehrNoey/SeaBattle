@@ -1128,7 +1128,7 @@ void save_user(Player * player){
     {
         if (strcmp(temp.name , player->name) == 0)
         {
-            temp.coin += player->coin;
+            temp.coin = player->coin;
             fseek(user_data,-1 * sizeof(Player) , SEEK_CUR);
             fwrite(&temp,sizeof(Player) , 1, user_data);
             fclose(user_data);
